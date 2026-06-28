@@ -1,42 +1,19 @@
 const Enrollment = require("../models/Enrollment");
 const Course = require("../models/Course");
 
-exports.enrollCourse = async (req, res) => {
+exports.joinByCode = async (req, res) => {
     try {
-        const { courseId } = req.body;
+        const { classCode } = req.body;
+        if (!classCode) return res.status(400).json({ message: "Class code is required" });
 
-        if (!courseId) {
-            return res.status(400).json({ message: "courseId is required" });
-        }
+        const course = await Course.findOne({ where: { classCode: classCode.toUpperCase().trim() } });
+        if (!course) return res.status(404).json({ message: "Invalid class code. Please check and try again." });
 
-        const course = await Course.findByPk(courseId);
-        if (!course) {
-            return res.status(404).json({ message: "Course not found" });
-        }
+        const already = await Enrollment.findOne({ where: { studentId: req.user.id, courseId: course.id } });
+        if (already) return res.status(400).json({ message: "You are already enrolled in this class." });
 
-        const existingEnrollment = await Enrollment.findOne({
-            where: {
-                studentId: req.user.id,
-                courseId
-            }
-        });
-
-        if (existingEnrollment) {
-            return res.status(400).json({
-                message: "Already enrolled in this course"
-            });
-        }
-
-        const enrollment = await Enrollment.create({
-            studentId: req.user.id,
-            courseId
-        });
-
-        res.status(201).json({
-            message: "Enrollment successful",
-            enrollment
-        });
-
+        await Enrollment.create({ studentId: req.user.id, courseId: course.id });
+        res.status(201).json({ message: "Joined successfully!", course });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -45,19 +22,10 @@ exports.enrollCourse = async (req, res) => {
 exports.getStudentCourses = async (req, res) => {
     try {
         const enrollments = await Enrollment.findAll({
-            where: {
-                studentId: req.user.id
-            },
-            include: [
-                {
-                    model: Course,
-                    as: "course"
-                }
-            ]
+            where: { studentId: req.user.id },
+            include: [{ model: Course, as: "course" }]
         });
-
         res.json(enrollments);
-
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

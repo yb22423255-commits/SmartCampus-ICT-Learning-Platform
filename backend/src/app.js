@@ -13,10 +13,18 @@ const assignmentRoutes = require("./Routes/assignmentRoutes");
 const courseRoutes = require("./Routes/courseRoutes");
 const dashboardRoutes = require("./Routes/dashboardRoutes");
 const userRoutes = require("./Routes/userRoutes");
+const aiRoutes = require("./Routes/aiRoutes");
 
 require("dotenv").config();
 
 const app = express();
+
+app.set("trust proxy", 1);
+
+const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -25,7 +33,14 @@ const limiter = rateLimit({
 
 app.use(helmet());
 app.use(cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin(origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+            return;
+        }
+
+        callback(null, false);
+    },
     credentials: true
 }));
 app.use(express.json());
@@ -33,6 +48,10 @@ app.use(morgan("dev"));
 app.use(limiter);
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
+app.get("/health", (req, res) => {
+    res.json({ status: "ok" });
+});
 
 app.get("/", (req, res) => {
     res.json({
@@ -48,6 +67,7 @@ app.use("/api/quizzes", quizRoutes);
 app.use("/api/assignments", assignmentRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/ai", aiRoutes);
 
 app.use((err, req, res, next) => {
     if (err.message === "Invalid file type") {

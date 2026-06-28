@@ -1,19 +1,18 @@
 const { Sequelize } = require("sequelize");
 require("dotenv").config();
 
-/*
-  Sequelize = ORM (helps Node.js talk to MySQL easily)
-  We are loading database credentials from .env file
-*/
-
 const sequelize = new Sequelize(
-    process.env.DB_NAME,        // database name
-    process.env.DB_USER,        // mysql username
-    process.env.DB_PASSWORD,    // mysql password
+    process.env.DB_NAME,
+    process.env.DB_USER,
+    process.env.DB_PASSWORD,
     {
         host: process.env.DB_HOST,
-        dialect: "mysql",       // we are using MySQL
-        logging: false          // disables SQL logs in terminal
+        port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
+        dialect: "mysql",
+        logging: false,
+        dialectOptions: process.env.DB_SSL === "true"
+            ? { ssl: { require: true, rejectUnauthorized: false } }
+            : {}
     }
 );
 

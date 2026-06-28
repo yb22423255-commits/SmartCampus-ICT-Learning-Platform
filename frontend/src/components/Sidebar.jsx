@@ -15,6 +15,18 @@ const Sidebar = ({ open, onClose }) => {
         navigate("/login");
     };
 
+    const link = (to, label) => (
+        <li>
+            <NavLink
+                to={to}
+                className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
+                onClick={handleNavClick}
+            >
+                {label}
+            </NavLink>
+        </li>
+    );
+
     return (
         <aside className={open ? "sidebar" : "sidebar closed"}>
             <h3>SmartCampus</h3>
@@ -22,78 +34,25 @@ const Sidebar = ({ open, onClose }) => {
 
             <nav>
                 <ul>
-                    <li>
-                        <NavLink to="/dashboard"
-                                 className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
-                                 onClick={handleNavClick}>
-                            Dashboard
-                        </NavLink>
-                    </li>
+                    {link("/dashboard", "Dashboard")}
 
-                    {/* STUDENT LINKS */}
                     {isStudent && (
                         <>
-                            <li>
-                                <NavLink to="/courses"
-                                         className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
-                                         onClick={handleNavClick}>
-                                    Courses
-                                </NavLink>
-                            </li>
-                            <li>
-                                <NavLink to="/my-courses"
-                                         className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
-                                         onClick={handleNavClick}>
-                                    My Classes
-                                </NavLink>
-                            </li>
-                            <li>
-                                <NavLink to="/assignments"
-                                         className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
-                                         onClick={handleNavClick}>
-                                    Assignments
-                                </NavLink>
-                            </li>
-                            <li>
-                                <NavLink to="/grades"
-                                         className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
-                                         onClick={handleNavClick}>
-                                    My Grades
-                                </NavLink>
-                            </li>
+                            {link("/join", "+ Join a Class")}
+                            {link("/courses", "My Classes")}
+                            {link("/assignments", "Assignments")}
+                            {link("/grades", "My Grades")}
                         </>
                     )}
 
-                    {/* LECTURER LINKS */}
                     {isStaff && (
                         <>
-                            <li>
-                                <NavLink to="/courses"
-                                         className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
-                                         onClick={handleNavClick}>
-                                    My Courses
-                                </NavLink>
-                            </li>
-                            <li>
-                                <NavLink to="/assignments"
-                                         className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
-                                         onClick={handleNavClick}>
-                                    Assignments & Grading
-                                </NavLink>
-                            </li>
+                            {link("/courses", "My Courses")}
+                            {link("/assignments", "Assignments & Grading")}
                         </>
                     )}
 
-                    {/* ADMIN LINKS */}
-                    {isAdmin && (
-                        <li>
-                            <NavLink to="/admin"
-                                     className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
-                                     onClick={handleNavClick}>
-                                Admin Panel
-                            </NavLink>
-                        </li>
-                    )}
+                    {isAdmin && link("/admin", "Admin Panel")}
 
                     <li>
                         <button type="button" className="nav-link link-btn" onClick={handleLogout}>

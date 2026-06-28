@@ -15,16 +15,14 @@ import MyCourses from "./pages/MyCourses";
 import Assignments from "./pages/Assignments";
 import Grades from "./pages/Grades";
 import Admin from "./pages/Admin";
+import JoinClass from "./pages/JoinClass";
 
 import "./styles/global.css";
 
 function App() {
-    const [sidebarOpen, setSidebarOpen] = useState(
-        () => window.innerWidth > 768
-    );
-
+    const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 768);
     const closeSidebar = () => setSidebarOpen(false);
-    const toggleSidebar = () => setSidebarOpen((prev) => !prev);
+    const toggleSidebar = () => setSidebarOpen(prev => !prev);
 
     return (
         <BrowserRouter>
@@ -37,43 +35,33 @@ function App() {
                 <Route element={<ProtectedRoute />}>
                     <Route
                         path="/"
-                        element={
-                            <Layout
-                                open={sidebarOpen}
-                                toggle={toggleSidebar}
-                                onClose={closeSidebar}
-                            />
-                        }
+                        element={<Layout open={sidebarOpen} toggle={toggleSidebar} onClose={closeSidebar} />}
                     >
                         <Route index element={<Navigate to="dashboard" replace />} />
                         <Route path="dashboard" element={<Dashboard />} />
                         <Route path="courses" element={<Courses />} />
                         <Route path="courses/:courseId" element={<CourseDetail />} />
-                        <Route
-                            path="my-courses"
-                            element={
-                                <RoleRoute roles={["student"]}>
-                                    <MyCourses />
-                                </RoleRoute>
-                            }
-                        />
+                        <Route path="join" element={
+                            <RoleRoute roles={["student"]}>
+                                <JoinClass />
+                            </RoleRoute>
+                        } />
+                        <Route path="my-courses" element={
+                            <RoleRoute roles={["student"]}>
+                                <MyCourses />
+                            </RoleRoute>
+                        } />
                         <Route path="assignments" element={<Assignments />} />
-                        <Route
-                            path="grades"
-                            element={
-                                <RoleRoute roles={["student"]}>
-                                    <Grades />
-                                </RoleRoute>
-                            }
-                        />
-                        <Route
-                            path="admin"
-                            element={
-                                <RoleRoute roles={["admin"]}>
-                                    <Admin />
-                                </RoleRoute>
-                            }
-                        />
+                        <Route path="grades" element={
+                            <RoleRoute roles={["student"]}>
+                                <Grades />
+                            </RoleRoute>
+                        } />
+                        <Route path="admin" element={
+                            <RoleRoute roles={["admin"]}>
+                                <Admin />
+                            </RoleRoute>
+                        } />
                     </Route>
                 </Route>
 

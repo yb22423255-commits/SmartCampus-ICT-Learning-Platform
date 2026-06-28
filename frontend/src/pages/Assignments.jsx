@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import API from "../services/api";
+import API_BASE from "../config";
 import { useAuth } from "../hooks/useAuth";
-
-const API_BASE = "http://localhost:5000";
 
 const Assignments = () => {
     const { isStaff } = useAuth();

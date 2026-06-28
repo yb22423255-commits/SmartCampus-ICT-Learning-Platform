@@ -1,8 +1,16 @@
 require("dotenv").config();
 
+const fs = require("fs");
+const path = require("path");
+
 const app = require("./app");
 const { sequelize, connectDB } = require("./config/db");
 require("./models/associations");
+
+const uploadsDir = path.join(__dirname, "../uploads");
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 const PORT = process.env.PORT || 5000;
 

@@ -4,12 +4,12 @@ import API from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 
 const Courses = () => {
-    const { isStudent, isStaff } = useAuth();
-    const [courses, setCourses] = useState([]);
+    const { isStaff } = useAuth();
     const [myCourses, setMyCourses] = useState([]);
-    const [enrolledIds, setEnrolledIds] = useState([]);
     const [form, setForm] = useState({ title: "", description: "" });
     const [loading, setLoading] = useState(true);
+    const [copied, setCopied] = useState(null);
+    const [msg, setMsg] = useState("");
 
     const loadData = async () => {
         setLoading(true);
@@ -18,85 +18,98 @@ const Courses = () => {
                 const res = await API.get("/courses/my");
                 setMyCourses(res.data);
             } else {
-                const [allRes, myRes] = await Promise.all([
-                    API.get("/courses"),
-                    API.get("/enrollments/my-courses")
-                ]);
-                setCourses(allRes.data);
-                setMyCourses(myRes.data.map((e) => e.course).filter(Boolean));
-                setEnrolledIds(myRes.data.map((e) => e.courseId));
+                const res = await API.get("/enrollments/my-courses");
+                setMyCourses(res.data.map(e => e.course).filter(Boolean));
             }
-        } catch (error) {
-            console.error(error);
+        } catch (err) {
+            console.error(err);
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        loadData();
-    }, [isStaff]);
+    useEffect(() => { loadData(); }, [isStaff]);
 
     const handleCreate = async (e) => {
         e.preventDefault();
         try {
             await API.post("/courses", form);
             setForm({ title: "", description: "" });
-            alert("Course created!");
+            setMsg("Course created successfully!");
+            setTimeout(() => setMsg(""), 3000);
             loadData();
-        } catch (error) {
-            alert(error.response?.data?.message || "Failed to create course");
+        } catch (err) {
+            setMsg(err.response?.data?.message || "Failed to create course");
         }
     };
 
-    const enrollCourse = async (courseId) => {
-        try {
-            await API.post("/enrollments", { courseId });
-            alert("Enrolled successfully!");
-            loadData();
-        } catch (error) {
-            alert(error.response?.data?.message || "Enrollment failed");
-        }
+    const copyCode = (code) => {
+        navigator.clipboard.writeText(code);
+        setCopied(code);
+        setTimeout(() => setCopied(null), 2000);
     };
 
-    if (loading) {
-        return <div className="page-content"><p>Loading courses...</p></div>;
-    }
+    if (loading) return <div className="page-content"><p>Loading...</p></div>;
 
+    /* ── LECTURER VIEW ── */
     if (isStaff) {
         return (
             <div className="page-content">
-                <h1>My Courses (Lecturer)</h1>
-                <p className="subtitle">Create and manage your classes</p>
+                <h1>My Courses</h1>
+                <p className="subtitle">Create courses and share the class code with your students.</p>
+
+                {msg && <p style={{ color: msg.includes("success") ? "#00d464" : "#ff6b6b", marginBottom: 16 }}>{msg}</p>}
 
                 <form className="panel-form" onSubmit={handleCreate}>
                     <h3>Create New Course</h3>
                     <input
                         placeholder="Course title"
                         value={form.title}
-                        onChange={(e) => setForm({ ...form, title: e.target.value })}
+                        onChange={e => setForm({ ...form, title: e.target.value })}
                         required
                     />
                     <textarea
                         placeholder="Course description"
                         value={form.description}
-                        onChange={(e) => setForm({ ...form, description: e.target.value })}
+                        onChange={e => setForm({ ...form, description: e.target.value })}
                         required
                     />
                     <button type="submit" className="btn">Create Course</button>
                 </form>
 
                 <div className="card-grid">
-                    {myCourses.length === 0 && (
-                        <p>No courses yet. Create your first course above.</p>
-                    )}
-                    {myCourses.map((course) => (
+                    {myCourses.length === 0 && <p style={{ color: "#9fb3d1" }}>No courses yet. Create your first one above.</p>}
+                    {myCourses.map(course => (
                         <div className="card" key={course.id}>
                             <h3>{course.title}</h3>
-                            <p>{course.description}</p>
-                            <Link to={`/courses/${course.id}`} className="btn btn-inline">
-                                Manage Course
-                            </Link>
+                            <p style={{ color: "#9fb3d1", fontSize: "0.9rem", margin: "6px 0 12px" }}>{course.description}</p>
+
+                            {/* Class code box */}
+                            {course.classCode && (
+                                <div style={{
+                                    background: "#0b1220", borderRadius: 8,
+                                    padding: "10px 14px", marginBottom: 12,
+                                    display: "flex", alignItems: "center", justifyContent: "space-between"
+                                }}>
+                                    <div>
+                                        <p style={{ color: "#9fb3d1", fontSize: "0.75rem", marginBottom: 2 }}>CLASS CODE</p>
+                                        <p style={{ color: "#00d4ff", fontWeight: 700, letterSpacing: "0.25em", fontSize: "1.2rem" }}>
+                                            {course.classCode}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => copyCode(course.classCode)}
+                                        style={{
+                                            background: copied === course.classCode ? "#00d464" : "#16233f",
+                                            border: "none", borderRadius: 6, padding: "6px 12px",
+                                            color: "white", cursor: "pointer", fontSize: "0.8rem"
+                                        }}>
+                                        {copied === course.classCode ? "Copied!" : "Copy"}
+                                    </button>
+                                </div>
+                            )}
+
+                            <Link to={`/courses/${course.id}`} className="btn btn-inline">Manage Course</Link>
                         </div>
                     ))}
                 </div>
@@ -104,49 +117,31 @@ const Courses = () => {
         );
     }
 
+    /* ── STUDENT VIEW ── */
     return (
         <div className="page-content">
-            <h1>Courses</h1>
+            <h1>My Classes</h1>
+            <p className="subtitle">
+                Your enrolled classes. Use <Link to="/join">+ Join a Class</Link> to join a new one with a code.
+            </p>
 
-            <section className="section-block">
-                <h2>My Enrolled Courses</h2>
-                <div className="card-grid">
-                    {myCourses.length === 0 && <p>You are not enrolled in any course yet.</p>}
-                    {myCourses.map((course) => (
-                        <div className="card" key={course.id}>
-                            <h3>{course.title}</h3>
-                            <p>{course.description}</p>
-                            <Link to={`/courses/${course.id}`} className="btn btn-inline">
-                                Open Classroom
-                            </Link>
-                        </div>
-                    ))}
-                </div>
-            </section>
-
-            <section className="section-block">
-                <h2>Browse & Enroll</h2>
-                <div className="card-grid">
-                    {courses.map((course) => (
-                        <div className="card" key={course.id}>
-                            <h3>{course.title}</h3>
-                            <p>{course.description}</p>
-                            {enrolledIds.includes(course.id) ? (
-                                <Link to={`/courses/${course.id}`} className="btn btn-inline">
-                                    Open Classroom
-                                </Link>
-                            ) : (
-                                <button
-                                    className="btn btn-inline"
-                                    onClick={() => enrollCourse(course.id)}
-                                >
-                                    Enroll
-                                </button>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </section>
+            <div className="card-grid">
+                {myCourses.length === 0 && (
+                    <div style={{ color: "#9fb3d1" }}>
+                        <p>You haven't joined any classes yet.</p>
+                        <Link to="/join" className="btn btn-inline" style={{ marginTop: 12 }}>
+                            + Join a Class
+                        </Link>
+                    </div>
+                )}
+                {myCourses.map(course => (
+                    <div className="card" key={course.id}>
+                        <h3>{course.title}</h3>
+                        <p style={{ color: "#9fb3d1", fontSize: "0.9rem", margin: "6px 0 12px" }}>{course.description}</p>
+                        <Link to={`/courses/${course.id}`} className="btn btn-inline">Open Classroom</Link>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 };
